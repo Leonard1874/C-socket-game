@@ -223,7 +223,10 @@ int main(int argc, char** argv)
     }
 
     char hostName[INET_ADDRSTRLEN];
-    inet_ntop(connector_addr.ss_family, get_in_addr((struct sockaddr *)&connector_addr), hostName, sizeof hostName);
+    struct in_addr inAddr = ((struct sockaddr_in*)&connector_addr)->sin_addr;
+    inet_ntop(AF_INET, &inAddr, hostName, sizeof hostName);
+
+    std::cout << hostName << std::endl;
     
     playerPts.push_back(recv);
     std::string host_str(hostName);
@@ -235,7 +238,7 @@ int main(int argc, char** argv)
   size_t to_connect = 0;
   for(size_t i = 0; i < playerFds.size(); i++){
     to_connect = (i+1)%numPlayer;
-    std::string toSend = std::to_string(i+1)+ ":" +playerHns[to_connect] + ":" +playerPts[to_connect] + ":" + std::to_string(numPlayer) + ";";
+    std::string toSend = std::to_string(i+1)+ ":" +playerHns[to_connect] + ":" +playerPts[to_connect] + ":" + std::to_string(numPlayer) + ":" + std::to_string(hop) + ";" ;
     if (!Send(playerFds[i],toSend)){ 
       std::perror("send hostName:port number"); 
     }

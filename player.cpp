@@ -157,7 +157,7 @@ int setupSocket(const char* port, int sockfd, int& socket_fd_own){
     std::cerr << "  (" << hostname << "," << port << ")" << std::endl;
     return -1;
   }
- 
+
   char myIP[16];
   unsigned int myPort;
   struct sockaddr_in my_addr;
@@ -167,7 +167,7 @@ int setupSocket(const char* port, int sockfd, int& socket_fd_own){
   inet_ntop(AF_INET, &my_addr.sin_addr, myIP, sizeof(myIP));
   myPort = ntohs(my_addr.sin_port);
 
-  //std::cout << myPort << std::endl;
+  //std::cout << myIP << ":" << myPort << std::endl;
   std::string portStr(std::to_string(myPort));
   portStr += ';';
   char const *pchar = portStr.c_str(); 
@@ -255,7 +255,7 @@ int handlePotato(struct potato& p, std::vector<int>& sockets, int ownNum, int pl
 }
 
 /**********************************************************/
-int selectPort(std::vector<int>& sockets, int ownNum, int playerNum){
+int selectPort(std::vector<int>& sockets, int ownNum, int playerNum, int hopNum){
   int fdmax = *(std::max_element(sockets.begin(),sockets.end()));
   fd_set sockfds;
   FD_ZERO(&sockfds);
@@ -286,6 +286,7 @@ int selectPort(std::vector<int>& sockets, int ownNum, int playerNum){
             std::cerr << "handle potato from host error" << std::endl;
             return -1;
           }
+          hopNum -= 1;
         }
         else{ //clients
           struct potato p;
@@ -298,6 +299,10 @@ int selectPort(std::vector<int>& sockets, int ownNum, int playerNum){
             std::cerr << "handle potato from client error" << std::endl;
             return -1;
           }
+          hopNum -= 1;
+        }
+        if(hopNum == 0){
+          return 0;
         }
       }
     }
@@ -353,7 +358,7 @@ int main(int argc, char *argv[]){
 
   //start to select and play the game
   std::vector<int> sockets({sockfd_to_host,sockfd_to_other,sockfd_from_other});
-  if(selectPort(sockets, std::stoi(hostPort[0]), std::stoi(hostPort[3])) < 0){
+  if(selectPort(sockets, std::stoi(hostPort[0]), std::stoi(hostPort[3]), std::stoi(hostPort[4])) < 0){
     std::cerr << "select client error" << std::endl;
     return EXIT_FAILURE;
   }
