@@ -15,7 +15,7 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
-//
+
 #define MAXDATASIZE 100 // max number of bytes we can get at once 
 
 // get sockaddr, IPv4 or IPv6:
@@ -43,7 +43,6 @@ int acceptSocket(int sockfd){
 }
 
 /**************************************************************/
-
 int connectToSocket(const char* hostname, const char* port, int& socket_fd){
   struct addrinfo host_info;
   struct addrinfo *host_info_list;
@@ -80,7 +79,6 @@ int connectToSocket(const char* hostname, const char* port, int& socket_fd){
     std::cerr << "  (" << hostname << ":" << port << ")" << std::endl;
     return -1;
   }
-  freeaddrinfo(host_info_list);
   return 0;
 }
 /********************************************************/
@@ -119,7 +117,7 @@ int setupSocket(const char* port, int sockfd, int& socket_fd_own){
   int status;
   struct addrinfo host_info;
   struct addrinfo *host_info_list;
-  const char *hostname = "0.0.0.0";
+  const char *hostname = NULL;
 
   memset(&host_info, 0, sizeof(host_info));
 
@@ -159,7 +157,7 @@ int setupSocket(const char* port, int sockfd, int& socket_fd_own){
     std::cerr << "  (" << hostname << "," << port << ")" << std::endl;
     return -1;
   }
-
+ 
   char myIP[16];
   unsigned int myPort;
   struct sockaddr_in my_addr;
@@ -169,7 +167,7 @@ int setupSocket(const char* port, int sockfd, int& socket_fd_own){
   inet_ntop(AF_INET, &my_addr.sin_addr, myIP, sizeof(myIP));
   myPort = ntohs(my_addr.sin_port);
 
-  //std::cout << myIP << ":" << myPort << std::endl;
+  //std::cout << myPort << std::endl;
   std::string portStr(std::to_string(myPort));
   portStr += ';';
   char const *pchar = portStr.c_str(); 
@@ -177,7 +175,7 @@ int setupSocket(const char* port, int sockfd, int& socket_fd_own){
   if (send(sockfd, pchar, strlen(pchar), 0) == -1){ 
     std::perror("send port number"); 
   }
-  freeaddrinfo(host_info_list);
+  
   return 0;
 }
 /**********************************************************/
@@ -208,31 +206,13 @@ int getMsg(struct potato& p, int socketfd){
     std::cerr << "get potato string" << std::endl;
     return -1;
   }
-  else if(recv[0] == 'x'){   
+  else if(recv[0] == 'x'){
     return 1;
   }
   else{
-    //std::cout << recv << std::endl;
     potatoDeserialize(p,recv);
     return 0;
   }
-}
-/***********************************************************/
-int sendToOther(std::vector<int>& sockets, std::string toSend, int newSendClientNum, int ownNum, int playerNum){
-  int sendNum = 0;
-    if(newSendClientNum == 1){ //send to next
-      sendNum = ownNum % playerNum + 1;
-      std::cout << " Send Potato/End Signal to Player " << sendNum << "!" << std::endl;
-    }
-    else{ //send to prev
-      sendNum = (ownNum - 1 != 0) ? ownNum-1 : playerNum;
-      std::cout << "Send Potato to Player " << sendNum << "!" << std::endl;
-    }
-    if (send(sockets[newSendClientNum],toSend.c_str(), strlen(toSend.c_str()), 0) == -1){
-      std::perror("send potato to other client");
-      return -1;
-    }
-    return 0;
 }
 
 /**********************************************************/
@@ -242,24 +222,32 @@ int handlePotato(struct potato& p, std::vector<int>& sockets, int ownNum, int pl
   if(p.hop == 0){
     std::cout << "I'm 'IT'!" << std::endl;
     std::string sendback = potatoSerialize(p);
-    std::cout << sendback << " to: " << sockets[0] << std::endl;
     if (send(sockets[0],sendback.c_str(), strlen(sendback.c_str()), 0) == -1){ 
       std::perror("send potato back to master");
       return -1;
     }
     else{
-      if(sendToOther(sockets,"x;",1,ownNum,playerNum) < 0){
-        return -1;
-      }
       return 1;
     }
   }
   else{
     p.players.push_back(ownNum);
     std::string potatoStr = potatoSerialize(p);
+    
     srand(time(NULL)+ownNum+p.hop*29);
+    
     int newSendClientNum = rand()%2+1;
-    if(sendToOther(sockets,potatoStr,newSendClientNum,ownNum,playerNum) < 0){
+    int sendNum = 0;
+    if(newSendClientNum == 1){ //send to next
+      sendNum = ownNum % playerNum + 1;
+      std::cout << " Send Potato to Player " << sendNum << "!" << std::endl;
+    }
+    else{ //send to prev
+      sendNum = (ownNum - 1 != 0) ? ownNum-1 : playerNum;
+      std::cout << " Send Potato to Player " << sendNum << "!" << std::endl;
+    }
+    if (send(sockets[newSendClientNum],potatoStr.c_str(), strlen(potatoStr.c_str()), 0) == -1){
+      std::perror("send potato to other client");
       return -1;
     }
   }
@@ -267,7 +255,7 @@ int handlePotato(struct potato& p, std::vector<int>& sockets, int ownNum, int pl
 }
 
 /**********************************************************/
-int selectPort(std::vector<int>& sockets, int ownNum, int playerNum, int hopNum){
+int selectPort(std::vector<int>& sockets, int ownNum, int playerNum){
   int fdmax = *(std::max_element(sockets.begin(),sockets.end()));
   fd_set sockfds;
   FD_ZERO(&sockfds);
@@ -298,33 +286,18 @@ int selectPort(std::vector<int>& sockets, int ownNum, int playerNum, int hopNum)
             std::cerr << "handle potato from host error" << std::endl;
             return -1;
           }
-          hopNum -= 1;
         }
         else{ //clients
           struct potato p;
-          int gameStatus = getMsg(p,i);
-          if(gameStatus < 0){
+          if(getMsg(p,i) < 0){
             std::cerr << "get potato from client error" << std::endl;
             return -1;
-          }
-          else if(gameStatus > 0){
-            if(sendToOther(sockets,"x;",1,ownNum,playerNum) < 0){
-              return -1;
-            }
-            return 0;
           }
           int status = handlePotato(p,sockets,ownNum,playerNum);
           if(status < 0){
             std::cerr << "handle potato from client error" << std::endl;
             return -1;
           }
-          else if(status > 0){
-            return 0;
-          }
-          hopNum -= 1;
-        }
-        if(hopNum == 0){
-          return 0;
         }
       }
     }
@@ -347,7 +320,7 @@ int main(int argc, char *argv[]){
   int sockfd_to_other = 0;
   int sockfd_from_other = 0;
   
-  connectToSocket(hostName, PORT, sockfd_to_host);
+  connectToSocket(hostName,PORT, sockfd_to_host);
   
   //setup own socket, send port num to server
   const char* PORT_LISEN = "0";
@@ -380,7 +353,7 @@ int main(int argc, char *argv[]){
 
   //start to select and play the game
   std::vector<int> sockets({sockfd_to_host,sockfd_to_other,sockfd_from_other});
-  if(selectPort(sockets, std::stoi(hostPort[0]), std::stoi(hostPort[3]), std::stoi(hostPort[4])) < 0){
+  if(selectPort(sockets, std::stoi(hostPort[0]), std::stoi(hostPort[3])) < 0){
     std::cerr << "select client error" << std::endl;
     return EXIT_FAILURE;
   }
