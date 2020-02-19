@@ -208,8 +208,7 @@ int getMsg(struct potato& p, int socketfd){
     std::cerr << "get potato string" << std::endl;
     return -1;
   }
-  else if(recv[0] == 'x'){
-    //std::cout << recv << std::endl;
+  else if(recv[0] == 'x'){   
     return 1;
   }
   else{
@@ -243,6 +242,7 @@ int handlePotato(struct potato& p, std::vector<int>& sockets, int ownNum, int pl
   if(p.hop == 0){
     std::cout << "I'm 'IT'!" << std::endl;
     std::string sendback = potatoSerialize(p);
+    std::cout << sendback << " to: " << sockets[0] << std::endl;
     if (send(sockets[0],sendback.c_str(), strlen(sendback.c_str()), 0) == -1){ 
       std::perror("send potato back to master");
       return -1;
@@ -308,6 +308,9 @@ int selectPort(std::vector<int>& sockets, int ownNum, int playerNum, int hopNum)
             return -1;
           }
           else if(gameStatus > 0){
+            if(sendToOther(sockets,"x;",1,ownNum,playerNum) < 0){
+              return -1;
+            }
             return 0;
           }
           int status = handlePotato(p,sockets,ownNum,playerNum);
