@@ -111,14 +111,12 @@ int selectPort(std::vector<int>& sockets){
     }
   }
   //signal stop
-  /*
   for(size_t k = 0; k < sockets.size(); k++){
     if(!Send(sockets[k], "x;")){ 
       std::perror("send ending signal");
       return -1;
     } 
   }
-  */
   
   return 0;
 }
@@ -145,7 +143,7 @@ int main(int argc, char** argv)
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
 
-  int tryGetAddr = getaddrinfo(NULL, PORT, &hints, &servinfo);
+  int tryGetAddr = getaddrinfo("0.0.0.0", PORT, &hints, &servinfo);
   
   if (tryGetAddr) {
     std::cerr << "getaddrinfo:" <<  gai_strerror(tryGetAddr) << std::endl;

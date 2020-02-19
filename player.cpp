@@ -119,7 +119,7 @@ int setupSocket(const char* port, int sockfd, int& socket_fd_own){
   int status;
   struct addrinfo host_info;
   struct addrinfo *host_info_list;
-  const char *hostname = NULL;
+  const char *hostname = "0.0.0.0";
 
   memset(&host_info, 0, sizeof(host_info));
 
