@@ -209,12 +209,31 @@ int getMsg(struct potato& p, int socketfd){
     return -1;
   }
   else if(recv[0] == 'x'){
+    //std::cout << recv << std::endl;
     return 1;
   }
   else{
+    //std::cout << recv << std::endl;
     potatoDeserialize(p,recv);
     return 0;
   }
+}
+/***********************************************************/
+int sendToOther(std::vector<int>& sockets, std::string toSend, int newSendClientNum, int ownNum, int playerNum){
+  int sendNum = 0;
+    if(newSendClientNum == 1){ //send to next
+      sendNum = ownNum % playerNum + 1;
+      std::cout << " Send Potato/End Signal to Player " << sendNum << "!" << std::endl;
+    }
+    else{ //send to prev
+      sendNum = (ownNum - 1 != 0) ? ownNum-1 : playerNum;
+      std::cout << "Send Potato to Player " << sendNum << "!" << std::endl;
+    }
+    if (send(sockets[newSendClientNum],toSend.c_str(), strlen(toSend.c_str()), 0) == -1){
+      std::perror("send potato to other client");
+      return -1;
+    }
+    return 0;
 }
 
 /**********************************************************/
@@ -229,27 +248,18 @@ int handlePotato(struct potato& p, std::vector<int>& sockets, int ownNum, int pl
       return -1;
     }
     else{
+      if(sendToOther(sockets,"x;",1,ownNum,playerNum) < 0){
+        return -1;
+      }
       return 1;
     }
   }
   else{
     p.players.push_back(ownNum);
     std::string potatoStr = potatoSerialize(p);
-    
     srand(time(NULL)+ownNum+p.hop*29);
-    
     int newSendClientNum = rand()%2+1;
-    int sendNum = 0;
-    if(newSendClientNum == 1){ //send to next
-      sendNum = ownNum % playerNum + 1;
-      std::cout << " Send Potato to Player " << sendNum << "!" << std::endl;
-    }
-    else{ //send to prev
-      sendNum = (ownNum - 1 != 0) ? ownNum-1 : playerNum;
-      std::cout << "Send Potato to Player " << sendNum << "!" << std::endl;
-    }
-    if (send(sockets[newSendClientNum],potatoStr.c_str(), strlen(potatoStr.c_str()), 0) == -1){
-      std::perror("send potato to other client");
+    if(sendToOther(sockets,potatoStr,newSendClientNum,ownNum,playerNum) < 0){
       return -1;
     }
   }
@@ -292,14 +302,21 @@ int selectPort(std::vector<int>& sockets, int ownNum, int playerNum, int hopNum)
         }
         else{ //clients
           struct potato p;
-          if(getMsg(p,i) < 0){
+          int gameStatus = getMsg(p,i);
+          if(gameStatus < 0){
             std::cerr << "get potato from client error" << std::endl;
             return -1;
+          }
+          else if(gameStatus > 0){
+            return 0;
           }
           int status = handlePotato(p,sockets,ownNum,playerNum);
           if(status < 0){
             std::cerr << "handle potato from client error" << std::endl;
             return -1;
+          }
+          else if(status > 0){
+            return 0;
           }
           hopNum -= 1;
         }
