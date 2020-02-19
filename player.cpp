@@ -43,6 +43,7 @@ int acceptSocket(int sockfd){
 }
 
 /**************************************************************/
+
 int connectToSocket(const char* hostname, const char* port, int& socket_fd){
   struct addrinfo host_info;
   struct addrinfo *host_info_list;
@@ -79,6 +80,7 @@ int connectToSocket(const char* hostname, const char* port, int& socket_fd){
     std::cerr << "  (" << hostname << ":" << port << ")" << std::endl;
     return -1;
   }
+  freeaddrinfo(host_info_list);
   return 0;
 }
 /********************************************************/
@@ -175,7 +177,7 @@ int setupSocket(const char* port, int sockfd, int& socket_fd_own){
   if (send(sockfd, pchar, strlen(pchar), 0) == -1){ 
     std::perror("send port number"); 
   }
-  
+  freeaddrinfo(host_info_list);
   return 0;
 }
 /**********************************************************/
@@ -325,7 +327,7 @@ int main(int argc, char *argv[]){
   int sockfd_to_other = 0;
   int sockfd_from_other = 0;
   
-  connectToSocket(hostName,PORT, sockfd_to_host);
+  connectToSocket(hostName, PORT, sockfd_to_host);
   
   //setup own socket, send port num to server
   const char* PORT_LISEN = "0";

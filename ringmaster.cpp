@@ -226,7 +226,7 @@ int main(int argc, char** argv)
     struct in_addr inAddr = ((struct sockaddr_in*)&connector_addr)->sin_addr;
     inet_ntop(AF_INET, &inAddr, hostName, sizeof hostName);
 
-    std::cout << hostName << std::endl;
+    //std::cout << hostName << std::endl;
     
     playerPts.push_back(recv);
     std::string host_str(hostName);
