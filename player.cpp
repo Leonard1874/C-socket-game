@@ -117,7 +117,7 @@ int setupSocket(const char* port, int sockfd, int& socket_fd_own){
   int status;
   struct addrinfo host_info;
   struct addrinfo *host_info_list;
-  const char *hostname = NULL;
+  const char *hostname = "0.0.0.0";
 
   memset(&host_info, 0, sizeof(host_info));
 
@@ -168,8 +168,8 @@ int setupSocket(const char* port, int sockfd, int& socket_fd_own){
   myPort = ntohs(my_addr.sin_port);
 
   //std::cout << myPort << std::endl;
-  std::string portStr(std::to_string(myPort));
-  portStr += ';';
+  std::string portStr = std::to_string(myPort) + ':' + myIP +';';
+  std::cout << portStr << std::endl;
   char const *pchar = portStr.c_str(); 
   
   if (send(sockfd, pchar, strlen(pchar), 0) == -1){ 

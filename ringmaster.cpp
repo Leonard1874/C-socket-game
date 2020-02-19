@@ -26,6 +26,17 @@ void *get_in_addr(struct sockaddr *sa)
 
   return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
+/********************************************************************/
+
+std::vector<std::string> parse_host_port(std::string& recv){
+  std::stringstream ss(recv);
+  std::string temp;
+  std::vector<std::string> res;
+  while(std::getline(ss,temp,':')){
+    res.push_back(temp);
+  }
+  return res;
+}
 /***************************************************************/
 bool Send(int sendFd, std::string toSend){
   if (send(sendFd, toSend.c_str(), strlen(toSend.c_str()), 0) == -1){ 
@@ -142,7 +153,7 @@ int main(int argc, char** argv)
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
 
-  int tryGetAddr = getaddrinfo(NULL, PORT, &hints, &servinfo);
+  int tryGetAddr = getaddrinfo("0.0.0.0", PORT, &hints, &servinfo);
   
   if (tryGetAddr) {
     std::cerr << "getaddrinfo:" <<  gai_strerror(tryGetAddr) << std::endl;
@@ -222,12 +233,14 @@ int main(int argc, char** argv)
       return EXIT_FAILURE;
     }
 
-    char hostName[INET_ADDRSTRLEN];
-    inet_ntop(connector_addr.ss_family, get_in_addr((struct sockaddr *)&connector_addr), hostName, sizeof hostName);
+    std::vector<std::string>hostPort = parse_host_port(recv);
+
+    //char hostName[INET_ADDRSTRLEN];
+    //inet_ntop(connector_addr.ss_family, get_in_addr((struct sockaddr *)&connector_addr), hostName, sizeof hostName);
     
-    playerPts.push_back(recv);
-    std::string host_str(hostName);
-    playerHns.push_back(host_str);
+    playerPts.push_back(hostPort[0]);
+    //std::string host_str(hostName);
+    playerHns.push_back(hostPort[1]);
     playerCount ++;
   }
   
