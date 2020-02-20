@@ -154,6 +154,7 @@ int main(int argc, char** argv)
   hints.ai_flags = AI_PASSIVE;
 
   int tryGetAddr = getaddrinfo("0.0.0.0", PORT, &hints, &servinfo);
+  //int tryGetAddr = getaddrinfo(NULL, PORT, &hints, &servinfo);
   
   if (tryGetAddr) {
     std::cerr << "getaddrinfo:" <<  gai_strerror(tryGetAddr) << std::endl;
@@ -232,15 +233,26 @@ int main(int argc, char** argv)
       std::cerr << "get hostname: port number" << std::endl;
       return EXIT_FAILURE;
     }
-
+    /*
     std::vector<std::string>hostPort = parse_host_port(recv);
 
+    std::cout << recv << std::endl;
+    
     //char hostName[INET_ADDRSTRLEN];
     //inet_ntop(connector_addr.ss_family, get_in_addr((struct sockaddr *)&connector_addr), hostName, sizeof hostName);
-    
+    //std::string portStr(hostPort[0]);
     playerPts.push_back(hostPort[0]);
-    //std::string host_str(hostName);
+    //std::string host_str(h);
     playerHns.push_back(hostPort[1]);
+    //std::cout << portStr << ":" << host_str;
+    playerCount ++;
+    */
+    char hostName[INET_ADDRSTRLEN];
+    inet_ntop(connector_addr.ss_family, get_in_addr((struct sockaddr *)&connector_addr), hostName, sizeof hostName);
+    
+    playerPts.push_back(recv);
+    std::string host_str(hostName);
+    playerHns.push_back(host_str);
     playerCount ++;
   }
   

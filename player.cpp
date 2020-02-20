@@ -118,6 +118,7 @@ int setupSocket(const char* port, int sockfd, int& socket_fd_own){
   struct addrinfo host_info;
   struct addrinfo *host_info_list;
   const char *hostname = "0.0.0.0";
+  //const char *hostname = NULL;
 
   memset(&host_info, 0, sizeof(host_info));
 
@@ -168,7 +169,8 @@ int setupSocket(const char* port, int sockfd, int& socket_fd_own){
   myPort = ntohs(my_addr.sin_port);
 
   //std::cout << myPort << std::endl;
-  std::string portStr = std::to_string(myPort) + ':' + myIP +';';
+  //std::string portStr = std::to_string(myPort) + ':' + myIP +';';
+  std::string portStr = std::to_string(myPort) + ";";
   std::cout << portStr << std::endl;
   char const *pchar = portStr.c_str(); 
   
@@ -190,7 +192,6 @@ std::string potatoSerialize(potato& p){
   return res;
 }
 /********************************************************/
-
 void potatoDeserialize(struct potato& p, std::string pStr){
   std::vector<std::string> pInfo = parse_host_port(pStr);
   p.hop = std::stoi(pInfo[0]);
@@ -198,6 +199,14 @@ void potatoDeserialize(struct potato& p, std::string pStr){
     p.players.push_back(std::stoi(pInfo[i]));
   }
 }
+/***********************************************************/
+
+void sendEnd(std::vector<int>& sockets, int num){
+  if (send(sockets[num],"x;", strlen("x;"), 0) == -1){
+      std::perror("send potato to other client");
+    }
+}
+
 /***********************************************************/
 int getMsg(struct potato& p, int socketfd){
   int numbytes;
@@ -279,6 +288,8 @@ int selectPort(std::vector<int>& sockets, int ownNum, int playerNum){
             return -1;
           }
           else if(gameStatus > 0){
+            sendEnd(sockets,1);
+            sendEnd(sockets,2);
             return 0;
           }
           int status = handlePotato(p,sockets,ownNum,playerNum);
@@ -289,9 +300,15 @@ int selectPort(std::vector<int>& sockets, int ownNum, int playerNum){
         }
         else{ //clients
           struct potato p;
-          if(getMsg(p,i) < 0){
+          int gameStatusClient = getMsg(p,i);
+          if(gameStatusClient < 0){
             std::cerr << "get potato from client error" << std::endl;
             return -1;
+          }
+          else if(gameStatusClient > 0){
+            sendEnd(sockets,1);
+            sendEnd(sockets,2);
+            return 0;
           }
           int status = handlePotato(p,sockets,ownNum,playerNum);
           if(status < 0){
