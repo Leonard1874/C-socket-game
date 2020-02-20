@@ -14,4 +14,4 @@ player: $(OBJS_P)
 	g++ $(CPPFLAGS) -c $<
 
 clean:
-	rm test *~ *.o
+	rm ringmaster player *~ *.o

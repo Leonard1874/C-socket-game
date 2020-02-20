@@ -168,10 +168,8 @@ int setupSocket(const char* port, int sockfd, int& socket_fd_own){
   inet_ntop(AF_INET, &my_addr.sin_addr, myIP, sizeof(myIP));
   myPort = ntohs(my_addr.sin_port);
 
-  //std::cout << myPort << std::endl;
-  //std::string portStr = std::to_string(myPort) + ':' + myIP +';';
   std::string portStr = std::to_string(myPort) + ";";
-  std::cout << portStr << std::endl;
+  
   char const *pchar = portStr.c_str(); 
   
   if (send(sockfd, pchar, strlen(pchar), 0) == -1){ 
@@ -349,12 +347,9 @@ int main(int argc, char *argv[]){
   if(!recieve(sockfd_to_host,&numbytes,recv)){
     std::cerr << "get hostname: port number" << std::endl;
   }
-
-  //std::cout << recv << std::endl;
  
   std::vector<std::string> hostPort;
   hostPort = parse_host_port(recv);
-  //std::cout << hostPort[0].c_str() <<hostPort[1].c_str() << " : " << hostPort[2].c_str() << std::endl;
   
   //connect with each other 
   if((connectToSocket(hostPort[1].c_str(),hostPort[2].c_str(),sockfd_to_other)) < 0){
